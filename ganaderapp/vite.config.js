@@ -8,6 +8,11 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  server: {
+    host: true, // Permite acceso desde localhost y desde otros dispositivos en tu red local (IP)
+    port: 5173,
+    open: true, // Abre automáticamente el navegador al iniciar el servidor
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))

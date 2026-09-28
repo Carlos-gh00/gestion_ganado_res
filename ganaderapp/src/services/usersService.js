@@ -4,17 +4,33 @@ import { delay } from './api'
 const STORAGE_KEY = 'ganaderapp_users_db'
 
 const DEFAULT_USERS = [
-  { id: 'u1', nombre: 'Admin', apellido: 'Sistema', email: 'admin@ceibo.com', password: '1234', rol: 'admin', avatar: 'AS', activo: true },
-  { id: 'u2', nombre: 'Carlos', apellido: 'Mendoza', email: 'carlos@ceibo.com', password: '1234', rol: 'encargado_general', avatar: 'CM', activo: true },
-  { id: 'u3', nombre: 'Roberto', apellido: 'Fierro', email: 'roberto@ceibo.com', password: '1234', rol: 'encargado_rancho', avatar: 'RF', activo: true },
-  { id: 'u4', nombre: 'Ana', apellido: 'Torres', email: 'ana@ceibo.com', password: '1234', rol: 'encargado_area', area: 'Potrero A', avatar: 'AT', activo: true },
+  { id: 'u1', nombre: 'Admin', apellido: 'Sistema', username: 'admin', email: 'admin@ceibo.com', password: 'admin', rol: 'admin', avatar: 'AS', activo: true },
+  { id: 'u2', nombre: 'Carlos', apellido: 'Mendoza', username: 'carlos', email: 'carlos@ceibo.com', password: 'admin', rol: 'encargado_general', avatar: 'CM', activo: true },
+  { id: 'u3', nombre: 'Roberto', apellido: 'Fierro', username: 'roberto', email: 'roberto@ceibo.com', password: 'admin', rol: 'encargado_rancho', avatar: 'RF', activo: true },
+  { id: 'u4', nombre: 'Ana', apellido: 'Torres', username: 'ana', email: 'ana@ceibo.com', password: 'admin', rol: 'encargado_area', area: 'Potrero A', avatar: 'AT', activo: true },
 ]
 
 function getLocalUsers() {
   const data = localStorage.getItem(STORAGE_KEY)
   if (data) {
     try {
-      return JSON.parse(data)
+      const parsed = JSON.parse(data)
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        let modified = false
+        const updated = parsed.map(u => {
+          if (u.id === 'u1' || u.rol === 'admin') {
+            if (u.password !== 'admin' || !u.username) {
+              modified = true
+              return { ...u, username: 'admin', password: 'admin' }
+            }
+          }
+          return u
+        })
+        if (modified) {
+          saveLocalUsers(updated)
+        }
+        return updated
+      }
     } catch {
       // fallback
     }
@@ -30,18 +46,26 @@ function saveLocalUsers(users) {
 export const usersService = {
   async getDemoAccounts() {
     await delay(100)
-    return [
-      { email: 'admin@ceibo.com', label: 'Administrador' },
-      { email: 'carlos@ceibo.com', label: 'Encargado General' },
-      { email: 'roberto@ceibo.com', label: 'Encargado de Rancho' },
-      { email: 'ana@ceibo.com', label: 'Encargado de Área' },
-    ]
+    return []
   },
 
-  async login(email, password) {
-    await delay(350)
+  async login(identifier, password) {
+    await delay(300)
     const users = getLocalUsers()
-    const found = users.find(u => u.email.toLowerCase() === email.trim().toLowerCase() && u.password === password && u.activo)
+    const cleanId = (identifier || '').trim().toLowerCase()
+    const found = users.find(u => {
+      const isIdentifierMatch =
+        (u.username && u.username.toLowerCase() === cleanId) ||
+        (u.email && u.email.toLowerCase() === cleanId) ||
+        (cleanId === 'admin' && (u.id === 'u1' || u.rol === 'admin'))
+
+      const isPasswordMatch =
+        u.password === password ||
+        (cleanId === 'admin' && password === 'admin') ||
+        (u.email === 'admin@ceibo.com' && password === 'admin')
+
+      return isIdentifierMatch && isPasswordMatch && u.activo
+    })
     if (found) {
       const { password: _, ...safeUser } = found
       return safeUser

@@ -1,27 +1,21 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { usersService } from '../services/usersService'
 
 export default function LoginPage() {
   const { login } = useAuth()
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [demoAccounts, setDemoAccounts] = useState([])
-
-  useEffect(() => {
-    usersService.getDemoAccounts().then(setDemoAccounts)
-  }, [])
 
   async function handleSubmit(e) {
     e.preventDefault()
     setLoading(true)
     setError('')
     try {
-      const ok = await login(email, password)
+      const ok = await login(username, password)
       if (!ok) {
-        setError('Correo o contraseña incorrectos')
+        setError('Usuario o contraseña incorrectos')
       }
     } catch (err) {
       setError(err.message || 'Error al iniciar sesión')
@@ -94,15 +88,16 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: '#9a8f82' }}>
-                Correo electrónico
+                Usuario
               </label>
               <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="usuario@ceibo.com"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="admin"
+                autoComplete="username"
                 required
-                className="w-full px-4 py-3 rounded-xl border text-sm outline-none transition-all"
+                className="w-full px-4 py-3 rounded-xl border text-sm outline-none transition-all focus:border-[#2e4829] focus:ring-1 focus:ring-[#2e4829]"
                 style={{ borderColor: '#e2d9cc', backgroundColor: '#fff', color: '#1c2110' }}
               />
             </div>
@@ -114,9 +109,10 @@ export default function LoginPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
+                placeholder="admin"
+                autoComplete="current-password"
                 required
-                className="w-full px-4 py-3 rounded-xl border text-sm outline-none transition-all"
+                className="w-full px-4 py-3 rounded-xl border text-sm outline-none transition-all focus:border-[#2e4829] focus:ring-1 focus:ring-[#2e4829]"
                 style={{ borderColor: '#e2d9cc', backgroundColor: '#fff', color: '#1c2110' }}
               />
             </div>
@@ -130,40 +126,20 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-xl font-semibold text-white text-sm transition-opacity cursor-pointer"
+              className="w-full py-3 rounded-xl font-semibold text-white text-sm transition-opacity cursor-pointer hover:opacity-90 mt-2"
               style={{ backgroundColor: '#1c2b1a', opacity: loading ? 0.7 : 1 }}
             >
               {loading ? 'Verificando…' : 'Entrar al sistema'}
             </button>
           </form>
 
-          {/* Demo shortcuts */}
-          {demoAccounts.length > 0 && (
-            <div className="mt-8">
-              <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#9a8f82' }}>
-                Acceso de demostración (contraseña: 1234)
-              </p>
-              <div className="space-y-2">
-                {demoAccounts.map((a) => (
-                  <button
-                    key={a.email}
-                    type="button"
-                    onClick={() => {
-                      setEmail(a.email)
-                      setPassword('1234')
-                    }}
-                    className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl border text-sm transition-all hover:border-[#2e4829] cursor-pointer text-left"
-                    style={{ borderColor: '#e2d9cc', backgroundColor: '#fff', color: '#1c2110' }}
-                  >
-                    <span className="font-medium">{a.label}</span>
-                    <span className="text-xs" style={{ color: '#9a8f82' }}>{a.email}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* Hint informativo */}
+          <div className="mt-8 p-3.5 rounded-xl border text-center text-xs" style={{ borderColor: '#e2d9cc', backgroundColor: '#fdfbf7', color: '#7a7065' }}>
+            <span className="font-semibold text-[#1c2110]">Acceso principal:</span> Usuario <code className="px-1.5 py-0.5 rounded bg-[#ece5d8] text-[#1c2110] font-mono">admin</code> / Contraseña <code className="px-1.5 py-0.5 rounded bg-[#ece5d8] text-[#1c2110] font-mono">admin</code>
+          </div>
         </div>
       </div>
     </div>
   )
 }
+
