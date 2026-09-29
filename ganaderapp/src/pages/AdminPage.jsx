@@ -4,9 +4,14 @@ import { ROL_LABELS, ROL_COLORS, ROL_PERMISOS, ROLES_LIST } from '../utils/const
 import Modal from '../components/ui/Modal'
 
 export default function AdminPage() {
-  const { users, addUser, toggleUser } = useAuth()
+  const { users, addUser, toggleUser, sendCredentials } = useAuth()
   const [showModal, setShowModal] = useState(false)
-  const [saved, setSaved] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [createdResult, setCreatedResult] = useState(null)
+  const [showPassword, setShowPassword] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const [sendByEmail, setSendByEmail] = useState(true)
+
   const [form, setForm] = useState({
     nombre: '',
     apellido: '',
@@ -16,15 +21,54 @@ export default function AdminPage() {
     area: '',
   })
 
+  function generateRandomPassword() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'
+    let pwd = 'G-'
+    for (let i = 0; i < 6; i++) {
+      pwd += chars.charAt(Math.floor(Math.random() * chars.length))
+    }
+    setForm((prev) => ({ ...prev, password: pwd }))
+  }
+
   async function handleAdd(e) {
     e.preventDefault()
-    await addUser({ ...form })
-    setSaved(true)
-    setTimeout(() => {
-      setSaved(false)
-      setShowModal(false)
-      setForm({ nombre: '', apellido: '', email: '', password: '', rol: 'encargado_area', area: '' })
-    }, 1200)
+    setSubmitting(true)
+    try {
+      const finalPassword = form.password || `G-${Math.floor(1000 + Math.random() * 9000)}`
+      const payload = { ...form, password: finalPassword }
+      const res = await addUser(payload)
+
+      setCreatedResult({
+        nombre: `${form.nombre} ${form.apellido}`.trim(),
+        email: form.email.trim(),
+        password: finalPassword,
+        rol: form.rol,
+        area: form.area,
+        credentialsDelivery: res?.credentialsDelivery || null,
+        backendNotified: res?.credentialsDelivery?.backendNotified,
+        mailtoUrl: res?.credentialsDelivery?.mailtoUrl,
+      })
+    } catch (err) {
+      console.error('Error al dar de alta:', err)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  function handleCloseModal() {
+    setShowModal(false)
+    setCreatedResult(null)
+    setCopied(false)
+    setShowPassword(false)
+    setForm({ nombre: '', apellido: '', email: '', password: '', rol: 'encargado_area', area: '' })
+  }
+
+  function handleCopyCredentials() {
+    if (!createdResult) return
+    const text = `Credenciales de acceso a GanaderAPP:\nUsuario / Correo: ${createdResult.email}\nContraseña: ${createdResult.password}\nRol: ${ROL_LABELS[createdResult.rol] || createdResult.rol}\nAcceso: ${window.location.origin}`
+    navigator.clipboard.writeText(text)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2500)
   }
 
   return (
@@ -36,11 +80,14 @@ export default function AdminPage() {
           <p className="text-sm mt-1" style={{ color: '#9a8f82' }}>Gestión de usuarios y permisos del sistema</p>
         </div>
         <button
-          onClick={() => setShowModal(true)}
-          className="px-4 py-2.5 rounded-xl text-sm font-bold text-white flex items-center gap-2 cursor-pointer hover:opacity-90"
+          onClick={() => {
+            setCreatedResult(null)
+            setShowModal(true)
+          }}
+          className="px-4 py-2.5 rounded-xl text-sm font-bold text-white flex items-center gap-2 cursor-pointer hover:opacity-90 transition-opacity"
           style={{ backgroundColor: '#2e4829' }}
         >
-          + Dar de alta perfil
+          + Dar de alta usuario
         </button>
       </div>
 
@@ -85,7 +132,7 @@ export default function AdminPage() {
       {/* Users table */}
       <div className="bg-white rounded-2xl border overflow-hidden" style={{ borderColor: '#e2d9cc' }}>
         <div
-          class="px-5 py-4 border-b flex items-center justify-between"
+          className="px-5 py-4 border-b flex items-center justify-between"
           style={{ borderColor: '#f0ebe2', backgroundColor: '#faf6ef' }}
         >
           <h2 className="font-display text-xl" style={{ color: '#1c2110' }}>Perfiles registrados</h2>
@@ -167,12 +214,96 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* Modal Nuevo Perfil */}
-      <Modal show={showModal} title="Nuevo perfil" onClose={() => setShowModal(false)}>
-        {saved ? (
-          <div className="text-center py-8">
-            <div className="text-5xl mb-3">✓</div>
-            <p className="font-display text-xl" style={{ color: '#3a7d44' }}>Perfil creado exitosamente</p>
+      {/* Modal Nuevo Usuario */}
+      <Modal show={showModal} title={createdResult ? 'Usuario registrado' : 'Dar de alta nuevo usuario'} onClose={handleCloseModal}>
+        {createdResult ? (
+          <div className="py-2 space-y-4">
+            <div className="text-center py-3">
+              <div className="w-14 h-14 mx-auto rounded-full flex items-center justify-center text-2xl text-white mb-2" style={{ backgroundColor: '#2e4829' }}>
+                ✓
+              </div>
+              <h3 className="font-display text-2xl" style={{ color: '#1c2110' }}>Usuario registrado</h3>
+              <p className="text-xs mt-1" style={{ color: '#7a7065' }}>
+                Se ha generado y enviado el acceso para <strong>{createdResult.nombre}</strong>
+              </p>
+            </div>
+
+            {/* Credenciales Card */}
+            <div className="rounded-2xl p-4 border" style={{ backgroundColor: '#faf6ef', borderColor: '#e2d9cc' }}>
+              <div className="flex items-center justify-between mb-3 border-b pb-2" style={{ borderColor: '#e8e0d4' }}>
+                <span className="text-xs font-bold uppercase tracking-wider text-[#2e4829]">Credenciales de acceso</span>
+                <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-[#e6f4ea] text-[#137333]">
+                  ✓ Correo y contraseña generados
+                </span>
+              </div>
+
+              <div className="space-y-2.5 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-[#9a8f82]">Correo:</span>
+                  <span className="font-mono font-medium text-[#1c2110] select-all">{createdResult.email}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-[#9a8f82]">Contraseña:</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-semibold text-[#2e4829] select-all bg-white px-2 py-0.5 rounded border border-[#e2d9cc]">
+                      {showPassword ? createdResult.password : '••••••••'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="text-xs text-[#7a7065] hover:text-[#1c2110] cursor-pointer"
+                      title={showPassword ? 'Ocultar' : 'Mostrar'}
+                    >
+                      {showPassword ? '👁️‍🗨️' : '👁️'}
+                    </button>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-[#9a8f82]">Rol:</span>
+                  <span className="text-xs font-medium text-[#1c2110]">
+                    {ROL_LABELS[createdResult.rol] || createdResult.rol}
+                    {createdResult.area ? ` (${createdResult.area})` : ''}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Botones de acción para las credenciales */}
+            <div className="space-y-2 pt-2">
+              <button
+                type="button"
+                onClick={handleCopyCredentials}
+                className="w-full py-2.5 rounded-xl border text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer transition-colors"
+                style={{
+                  backgroundColor: copied ? '#f0fdf4' : '#fff',
+                  borderColor: copied ? '#86efac' : '#e2d9cc',
+                  color: copied ? '#15803d' : '#1c2110',
+                }}
+              >
+                {copied ? '✓ ¡Credenciales copiadas al portapapeles!' : '📋 Copiar mensaje con correo y contraseña'}
+              </button>
+
+              {createdResult.mailtoUrl && (
+                <a
+                  href={createdResult.mailtoUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full py-2.5 rounded-xl border text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer transition-colors bg-white hover:bg-[#faf6ef] text-[#2e4829]"
+                  style={{ borderColor: '#2e4829' }}
+                >
+                  ✉️ Abrir en cliente de correo (enviar por email)
+                </a>
+              )}
+
+              <button
+                type="button"
+                onClick={handleCloseModal}
+                className="w-full py-2.5 rounded-xl text-sm font-bold text-white cursor-pointer hover:opacity-90"
+                style={{ backgroundColor: '#2e4829' }}
+              >
+                Listo
+              </button>
+            </div>
           </div>
         ) : (
           <form onSubmit={handleAdd} className="space-y-4">
@@ -215,7 +346,7 @@ export default function AdminPage() {
                 type="email"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
-                placeholder="usuario@ceibo.com"
+                placeholder="usuario@estancia.com"
                 required
                 className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none"
                 style={{ borderColor: '#e2d9cc', color: '#1c2110' }}
@@ -223,28 +354,46 @@ export default function AdminPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: '#9a8f82' }}>
-                Contraseña inicial
-              </label>
-              <input
-                type="password"
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                placeholder="••••••••"
-                required
-                className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none"
-                style={{ borderColor: '#e2d9cc', color: '#1c2110' }}
-              />
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider" style={{ color: '#9a8f82' }}>
+                  Contraseña inicial
+                </label>
+                <button
+                  type="button"
+                  onClick={generateRandomPassword}
+                  className="text-xs font-medium text-[#2e4829] hover:underline cursor-pointer"
+                >
+                  ⚡ Generar segura
+                </button>
+              </div>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  placeholder="••••••••"
+                  required
+                  className="w-full px-3 py-2.5 pr-10 rounded-xl border text-sm outline-none font-mono"
+                  style={{ borderColor: '#e2d9cc', color: '#1c2110' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-2.5 text-xs text-[#9a8f82] hover:text-[#1c2110] cursor-pointer"
+                >
+                  {showPassword ? 'Ocultar' : 'Ver'}
+                </button>
+              </div>
             </div>
 
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: '#9a8f82' }}>
-                Rol
+                Rol del colaborador
               </label>
               <select
                 value={form.rol}
                 onChange={(e) => setForm({ ...form, rol: e.target.value })}
-                className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none"
+                className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none bg-white"
                 style={{ borderColor: '#e2d9cc', color: '#1c2110' }}
               >
                 {ROLES_LIST.map((r) => (
@@ -264,37 +413,28 @@ export default function AdminPage() {
                   type="text"
                   value={form.area}
                   onChange={(e) => setForm({ ...form, area: e.target.value })}
-                  placeholder="Ej. Acostadero A"
+                  placeholder="Ej. Potrero Norte / Acostadero A"
                   className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none"
                   style={{ borderColor: '#e2d9cc', color: '#1c2110' }}
                 />
               </div>
             )}
 
-            {/* Permissions preview */}
-            <div className="rounded-xl p-4" style={{ backgroundColor: '#f7f2ea' }}>
-              <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: '#9a8f82' }}>
-                Permisos de este rol
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {(ROL_PERMISOS[form.rol] || []).map((p) => (
-                  <span
-                    key={p}
-                    className="text-xs px-2 py-0.5 rounded-full font-medium"
-                    style={{ backgroundColor: '#fff', color: '#2e4829', border: '1px solid #e2d9cc' }}
-                  >
-                    {p}
-                  </span>
-                ))}
+            {/* Notificación de envío de correo */}
+            <div className="rounded-xl p-3 border flex items-start gap-2.5" style={{ backgroundColor: '#f0fdf4', borderColor: '#bbf7d0' }}>
+              <span className="text-base">✉️</span>
+              <div className="text-xs text-[#166534] leading-relaxed">
+                <strong>Envío de credenciales:</strong> Al dar de alta el perfil, se generará la función para mandar el correo y la contraseña directamente al usuario.
               </div>
             </div>
 
             <button
               type="submit"
-              className="w-full py-3 rounded-xl text-sm font-bold text-white cursor-pointer hover:opacity-90"
-              style={{ backgroundColor: '#2e4829' }}
+              disabled={submitting}
+              className="w-full py-3 rounded-xl text-sm font-bold text-white cursor-pointer hover:opacity-90 transition-opacity"
+              style={{ backgroundColor: '#2e4829', opacity: submitting ? 0.7 : 1 }}
             >
-              Crear perfil
+              {submitting ? 'Creando y enviando credenciales…' : 'Crear perfil y enviar correo y contraseña'}
             </button>
           </form>
         )}

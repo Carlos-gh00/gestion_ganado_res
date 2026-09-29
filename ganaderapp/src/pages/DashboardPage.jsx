@@ -29,7 +29,26 @@ export default function DashboardPage() {
   const [alertas, setAlertas] = useState([])
   const [movimientos, setMovimientos] = useState([])
   const [inventarioCritico, setInventarioCritico] = useState([])
-  const [clima, setClima] = useState([])
+  const [climaData, setClimaData] = useState(null)
+  const [refreshingClima, setRefreshingClima] = useState(false)
+
+  async function loadClima() {
+    try {
+      const cliRes = await dashboardService.getClima()
+      setClimaData(cliRes)
+    } catch (err) {
+      console.error('Error cargando clima:', err)
+    }
+  }
+
+  async function reloadClima() {
+    setRefreshingClima(true)
+    try {
+      await loadClima()
+    } finally {
+      setTimeout(() => setRefreshingClima(false), 400)
+    }
+  }
 
   useEffect(() => {
     Promise.all([
@@ -45,7 +64,7 @@ export default function DashboardPage() {
       setAlertas(alRes)
       setMovimientos(movRes)
       setInventarioCritico(invRes)
-      setClima(cliRes)
+      setClimaData(cliRes)
     })
   }, [])
 
@@ -225,18 +244,78 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Condiciones del día */}
+          {/* Condiciones del día (Google Clima / En vivo) */}
           <div className="rounded-2xl p-5" style={{ backgroundColor: '#2e4829' }}>
-            <h2 className="font-display text-lg text-white mb-4">Condiciones del día</h2>
-            <div className="grid grid-cols-2 gap-3">
-              {clima.map((c) => (
-                <div key={c.label} className="rounded-xl p-3" style={{ backgroundColor: '#3a5e35' }}>
-                  <div className="text-lg mb-1">{c.icon}</div>
-                  <div className="text-white font-semibold text-sm">{c.value}</div>
-                  <div className="text-xs" style={{ color: '#8fb88a' }}>{c.label}</div>
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="font-display text-lg text-white">Condiciones del día</h2>
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="Datos en vivo" />
+                </div>
+                <div className="text-xs mt-0.5" style={{ color: '#8fb88a' }}>
+                  📍 {climaData?.ubicacion || 'Estancia El Ceibo'} · {climaData?.condicion || 'Cielo despejado'}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={reloadClima}
+                disabled={refreshingClima}
+                title="Actualizar datos del día"
+                className="w-7 h-7 rounded-lg flex items-center justify-center text-xs text-white bg-[#3a5e35] hover:bg-[#466e40] transition-colors cursor-pointer"
+              >
+                <span className={refreshingClima ? 'animate-spin inline-block' : ''}>🔄</span>
+              </button>
+            </div>
+
+            {/* Banner resumen del clima actual */}
+            <div className="flex items-center justify-between p-2.5 rounded-xl mb-3 border border-[#3f653a] bg-[#243c20]/80">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">{climaData?.icon || '🌤️'}</span>
+                <div>
+                  <div className="text-white font-bold text-base leading-tight">
+                    {climaData?.temperatura || '24 °C'}
+                  </div>
+                  <div className="text-[11px]" style={{ color: '#a2caa0' }}>
+                    {climaData?.maxMin || 'Máx: 28°C · Mín: 15°C'}
+                  </div>
+                </div>
+              </div>
+
+              {climaData?.googleUrl && (
+                <a
+                  href={climaData.googleUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[11px] font-semibold text-[#c8e6c9] hover:text-white px-2.5 py-1 rounded-lg bg-[#33532f] hover:bg-[#3d6538] transition-colors flex items-center gap-1"
+                >
+                  <span>Google Clima</span> ↗
+                </a>
+              )}
+            </div>
+
+            {/* Grid con métricas del día */}
+            <div className="grid grid-cols-2 gap-2.5">
+              {(climaData?.items || []).map((c) => (
+                <div key={c.label} className="rounded-xl p-2.5" style={{ backgroundColor: '#3a5e35' }}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs" style={{ color: '#a2caa0' }}>{c.label}</span>
+                    <span className="text-sm">{c.icon}</span>
+                  </div>
+                  <div className="text-white font-semibold text-sm leading-tight">{c.value}</div>
+                  {c.sub && (
+                    <div className="text-[10px] mt-0.5 truncate" style={{ color: '#8fb88a' }}>
+                      {c.sub}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
+
+            {climaData?.actualizadoA && (
+              <div className="text-[10px] text-right mt-3" style={{ color: '#7ea87a' }}>
+                Sincronizado a las {climaData.actualizadoA}
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -51,21 +51,24 @@ export default function LoginPage() {
           <p className="text-base leading-relaxed" style={{ color: '#8fb88a' }}>
             Control total de animales, inventario, sanidad y producción desde un solo lugar. Diseñado para el campo.
           </p>
-          <div className="mt-10 grid grid-cols-3 gap-4">
+          <div className="mt-10 space-y-3 max-w-md">
             {[
-              { v: '1,284', l: 'Animales registrados' },
-              { v: '7', l: 'Potreros activos' },
-              { v: '$20.2M', l: 'Ingresos 2026' },
-            ].map((stat) => (
-              <div key={stat.l}>
-                <div className="font-display text-3xl text-white">{stat.v}</div>
-                <div className="text-xs mt-0.5" style={{ color: '#7aa870' }}>{stat.l}</div>
+              { icon: '🏷️', title: 'Trazabilidad y Pesaje', desc: 'Registro individual de animales y evolución de peso' },
+              { icon: '🌾', title: 'Manejo de Potreros', desc: 'Capacidad de carga, rotación y disponibilidad de pasto' },
+              { icon: '💉', title: 'Sanidad y Tratamientos', desc: 'Monitoreo clínico, vacunación y control de insumos' },
+            ].map((f) => (
+              <div key={f.title} className="flex items-center gap-3.5 p-3 rounded-xl bg-[#253922]/70 border border-[#2e4829]">
+                <span className="text-lg shrink-0">{f.icon}</span>
+                <div>
+                  <div className="text-sm font-semibold text-white">{f.title}</div>
+                  <div className="text-xs" style={{ color: '#8fb88a' }}>{f.desc}</div>
+                </div>
               </div>
             ))}
           </div>
         </div>
 
-        <p className="text-xs" style={{ color: '#4a6e45' }}>Estancia El Ceibo · Temporada 2026</p>
+        <p className="text-xs" style={{ color: '#4a6e45' }}>Sistema Administrativo Ganadero · Acceso Seguro</p>
       </div>
 
       {/* Right panel (form) */}
@@ -88,13 +91,13 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: '#9a8f82' }}>
-                Usuario
+                Usuario o Correo
               </label>
               <input
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="admin"
+                placeholder="Ingresa tu usuario o correo"
                 autoComplete="username"
                 required
                 className="w-full px-4 py-3 rounded-xl border text-sm outline-none transition-all focus:border-[#2e4829] focus:ring-1 focus:ring-[#2e4829]"
@@ -109,7 +112,7 @@ export default function LoginPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="admin"
+                placeholder="Ingresa tu contraseña"
                 autoComplete="current-password"
                 required
                 className="w-full px-4 py-3 rounded-xl border text-sm outline-none transition-all focus:border-[#2e4829] focus:ring-1 focus:ring-[#2e4829]"
@@ -132,11 +135,6 @@ export default function LoginPage() {
               {loading ? 'Verificando…' : 'Entrar al sistema'}
             </button>
           </form>
-
-          {/* Hint informativo */}
-          <div className="mt-8 p-3.5 rounded-xl border text-center text-xs" style={{ borderColor: '#e2d9cc', backgroundColor: '#fdfbf7', color: '#7a7065' }}>
-            <span className="font-semibold text-[#1c2110]">Acceso principal:</span> Usuario <code className="px-1.5 py-0.5 rounded bg-[#ece5d8] text-[#1c2110] font-mono">admin</code> / Contraseña <code className="px-1.5 py-0.5 rounded bg-[#ece5d8] text-[#1c2110] font-mono">admin</code>
-          </div>
         </div>
       </div>
     </div>

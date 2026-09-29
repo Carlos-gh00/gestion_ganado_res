@@ -57,12 +57,16 @@ export function AuthProvider({ children }) {
   async function addUser(userData) {
     setLoading(true)
     try {
-      const newUser = await usersService.addUser(userData)
+      const result = await usersService.addUser(userData)
       await loadUsers()
-      return newUser
+      return result
     } finally {
       setLoading(false)
     }
+  }
+
+  async function sendCredentials(userData) {
+    return await usersService.sendUserCredentials(userData)
   }
 
   async function toggleUser(id) {
@@ -92,6 +96,7 @@ export function AuthProvider({ children }) {
         login,
         logout,
         addUser,
+        sendCredentials,
         toggleUser,
         loadUsers,
         ROL_LABELS,
