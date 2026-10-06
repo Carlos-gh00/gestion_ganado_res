@@ -1,4 +1,7 @@
-"""Carga los datos de ejemplo del frontend actual en la base de datos.
+"""Carga datos de ejemplo en la base de datos (OPCIONAL y manual).
+
+La base de datos arranca VACIA con un unico usuario admin/admin;
+ejecuta este script solo si quieres datos de prueba.
 
 Uso:  python seed.py          (agrega datos si la BD esta vacia)
       python seed.py --reset  (borra todo y vuelve a cargar)

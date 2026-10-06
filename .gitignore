@@ -24,9 +24,10 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 
-# Base de datos (se regenera con backend/server/seed.py)
+# Base de datos (arranca vacia en backend/database/; seed.py es opcional y manual)
 *.db
 *.db.bak
+*.db.bak.tmp
 *.sqlite
 *.sqlite3
 

@@ -1,13 +1,42 @@
+import os
+
 from flask import Flask
 from flask_cors import CORS
-from config import Config
+from config import Config, DATABASE_DIR
 from errors import register_error_handlers
 from extensions import db, jwt_required, get_jwt_identity, generate_token
+
+
+def _ensure_initial_admin():
+    """Crea un unico admin inicial si la base de datos esta vacia.
+
+    La BD arranca sin datos de ejemplo: solo este usuario para poder entrar.
+    """
+    from models import Usuario
+
+    if db.session.query(Usuario).count() > 0:
+        return None
+
+    admin = Usuario(
+        nombre="Admin",
+        apellido="Sistema",
+        username="admin",
+        email="admin@localhost",
+        rol="admin",
+        avatar="AS",
+        activo=True,
+    )
+    admin.set_password("admin")
+    db.session.add(admin)
+    db.session.commit()
+    print("[inicio] Base de datos vacia: creado usuario admin / admin")
 
 
 def create_app(config_object=Config):
     app = Flask(__name__)
     app.config.from_object(config_object)
+
+    os.makedirs(DATABASE_DIR, exist_ok=True)
 
     CORS(app, resources={r"/api/*": {"origins": app.config["CORS_ORIGINS"]}})
 
@@ -34,6 +63,13 @@ def create_app(config_object=Config):
 
     with app.app_context():
         db.create_all()
+        _ensure_initial_admin()
+
+        from backup import start_backup_scheduler
+
+        # Con debug + reloader, el proceso padre no debe lanzar respaldos
+        if not (app.debug and os.environ.get("WERKZEUG_RUN_MAIN") is None):
+            start_backup_scheduler(app)
 
     register_error_handlers(app)
 

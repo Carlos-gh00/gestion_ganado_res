@@ -1,110 +1,132 @@
 # Gestión Ganado Res
 
-Proyecto desarrollado como una actividad para la creación de un álbum de fotos y la gestión de información relacionada con ganado.
-
-## Descripción general
-
-Este repositorio corresponde a una aplicación web desarrollada en JavaScript con enfoque en la organización y administración de información ganadera, además de permitir la gestión de imágenes o fotografías dentro de un álbum visual.
-
-La idea principal del proyecto es facilitar el manejo de datos, la visualización de registros y la organización de recursos gráficos de una manera clara y funcional.
-
-## Objetivo del proyecto
-
-- Gestionar información asociada a ganado.
-- Organizar y visualizar fotografías o evidencias del ganado.
-- Proporcionar una base de trabajo para actividades académicas o prácticas profesionales.
-- Desarrollar una solución sencilla, funcional y fácil de mantener.
-
-## Características principales
-
-- Registro de información relacionada con ganado.
-- Gestión de imágenes y álbum de fotos.
-- Interfaz de usuario basada en JavaScript.
-- Organización de datos para facilitar su consulta.
-- Estructura pensada para ampliarse con nuevas funcionalidades.
-
-## Tecnologías utilizadas
-
-- JavaScript
-- HTML/CSS (si aplica en la estructura del proyecto)
-- Node.js o herramientas auxiliares (según la implementación final)
-
-> El repositorio presenta una composición mayoritaria en JavaScript, con un 98.6% de contenido en este lenguaje.
-
-## Requisitos del sistema
-
-Antes de ejecutar el proyecto, asegúrate de contar con lo siguiente:
-
-- Node.js instalado
-- npm o yarn
-- Un navegador moderno
-- Git para clonar el repositorio
-
-## Instalación
-
-1. Clona este repositorio:
-
-```bash
-git clone https://github.com/Carlos-gh00/gestion_ganado_res.git
-```
-
-2. Accede a la carpeta del proyecto:
-
-```bash
-cd gestion_ganado_res
-```
-
-3. Instala las dependencias:
-
-```bash
-npm install
-```
-
-## Ejecución
-
-Para iniciar la aplicación, puedes ejecutar:
-
-```bash
-npm start
-```
-
-Si el proyecto utiliza un script diferente, revisa el archivo `package.json` para confirmar el comando correcto.
+Aplicación web para la gestión de ganado: animales, acostaderos, inventario, salud, reportes y usuarios.
 
 ## Estructura del proyecto
 
 ```text
-gestion_ganado_res/
-├── public/               # Archivos públicos del proyecto
-├── src/                  # Código fuente principal
-├── package.json          # Configuración del proyecto y scripts
-├── README.md             # Documentación del proyecto
-├── .gitignore            # Archivos ignorados por Git
-└── ...
+gestion reses/
+├── frontend/                  # Interfaz (React + Vite + Tailwind CSS)
+│   ├── src/
+│   │   ├── components/        # Componentes de layout y UI
+│   │   ├── context/           # Contexto de autenticación
+│   │   ├── pages/             # Pantallas (Dashboard, Animales, Salud, ...)
+│   │   ├── services/          # Cliente API y servicios
+│   │   └── utils/             # Constantes y utilidades
+│   ├── index.html
+│   ├── package.json
+│   └── vite.config.js         # Proxy /api -> http://127.0.0.1:5000
+│
+├── backend/
+│   ├── server/                # Todo lo del servidor (Flask)
+│   │   ├── run.py             # Punto de entrada (puerto 5000)
+│   │   ├── app/               # Factoría create_app, admin inicial, respaldos
+│   │   ├── routes/            # Endpoints /api/*
+│   │   ├── models.py          # Modelos de la base de datos
+│   │   ├── config.py          # Configuración (ruta de la BD, respaldos)
+│   │   ├── backup.py          # Respaldo .bak (manual o automático)
+│   │   ├── seed.py            # Datos de ejemplo (opcional, manual)
+│   │   ├── extensions.py      # SQLAlchemy, JWT, helpers de auth
+│   │   ├── errors.py          # Manejadores de error
+│   │   ├── requirements.txt
+│   │   └── .venv/             # Entorno virtual Python
+│   │
+│   └── database/              # Toda la base de datos
+│       ├── ganaderapp.db      # Se crea vacía al primer arranque
+│       └── backups/
+│           └── ganaderapp.db.bak   # Respaldo automático cada 24 h
+│
+├── .gitignore
+└── README.md
 ```
 
-## Uso esperado
+## Tecnologías
 
-El sistema puede utilizarse para:
+- **Frontend:** React, Vite, Tailwind CSS
+- **Backend:** Flask, Flask-SQLAlchemy, Flask-CORS, PyJWT
+- **Base de datos:** SQLite
 
-- Registrar ganado y sus características.
-- Asociar imágenes o fotografías a cada registro.
-- Organizar la información en un álbum visual.
-- Consultar y mantener la información de forma ordenada.
+## Requisitos
 
-## Mejoras futuras
+- Node.js y npm
+- Python 3.10 o superior
 
-Entre las posibles ampliaciones del proyecto se encuentran:
+## Instalación
 
-- Registro de usuarios y autenticación.
-- Base de datos para almacenamiento persistente.
-- Búsqueda y filtrado avanzado.
-- Mejoras visuales y responsividad.
-- Exportación de reportes.
-- Gestión de múltiples animales o lotes.
+1. Clona el repositorio:
 
-## Estado del proyecto
+```bash
+git clone https://github.com/Carlos-gh00/gestion_ganado_res.git
+cd gestion_ganado_res
+```
 
-Este repositorio representa una actividad práctica enfocada en la implementación de una solución funcional para la administración y visualización de información de ganado junto con un álbum fotográfico.
+2. Frontend:
+
+```bash
+cd frontend
+npm install
+```
+
+3. Backend:
+
+```bash
+cd backend/server
+python -m venv .venv
+.venv\Scripts\activate        # Windows
+pip install -r requirements.txt
+```
+
+## Ejecución
+
+Terminal 1 (backend):
+
+```bash
+cd backend/server
+.venv\Scripts\activate
+python run.py                 # http://127.0.0.1:5000
+```
+
+Terminal 2 (frontend):
+
+```bash
+cd frontend
+npm run dev                   # http://localhost:5173
+```
+
+## Primer acceso
+
+La base de datos arranca **vacía** (sin datos de ejemplo). Solo se crea un usuario inicial:
+
+- **Usuario:** `admin`
+- **Contraseña:** `admin`
+
+Desde ahí se crean el resto de usuarios y se carga la información real.
+Si quieres datos de prueba, ejecuta de forma manual: `python seed.py` (dentro de `backend/server`).
+
+## Respaldos
+
+- El servidor genera automáticamente `backend/database/backups/ganaderapp.db.bak`
+  cada **24 horas** (sobrescribe el respaldo anterior).
+- Intervalo configurable con la variable de entorno `BACKUP_INTERVAL_HOURS`.
+- Desactivar con `BACKUP_ENABLED=0`.
+- Respaldo inmediato manual:
+
+```bash
+cd backend/server
+python backup.py
+```
+
+## Estructura de la API
+
+Todas las rutas viven bajo `/api`:
+
+- `/api/auth` — login, usuarios
+- `/api/acostaderos` — acostaderos
+- `/api/animals` — animales
+- `/api/inventory` — inventario y movimientos
+- `/api/health` — tratamientos y vacunaciones
+- `/api/reports` — reportes
+- `/api/dashboard` — métricas del panel
 
 ## Autor
 
@@ -112,8 +134,4 @@ Este repositorio representa una actividad práctica enfocada en la implementaci�
 
 ## Licencia
 
-Este proyecto se encuentra bajo una licencia de uso académico/práctico, según la intención del desarrollo realizado en el repositorio.
-
-## Nota
-
-Este README puede ajustarse según la estructura final del proyecto y la funcionalidad exacta que se implemente en código. Si deseas, también puedo dejarte una versión más técnica, más visual o adaptada a un proyecto con frontend completo.
+Uso académico/práctico.
