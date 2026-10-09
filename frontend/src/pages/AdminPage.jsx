@@ -231,10 +231,15 @@ export default function AdminPage() {
             {/* Credenciales Card */}
             <div className="rounded-2xl p-4 border" style={{ backgroundColor: '#faf6ef', borderColor: '#e2d9cc' }}>
               <div className="flex items-center justify-between mb-3 border-b pb-2" style={{ borderColor: '#e8e0d4' }}>
-                <span className="text-xs font-bold uppercase tracking-wider text-[#2e4829]">Credenciales de acceso</span>
-                <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-[#e6f4ea] text-[#137333]">
-                  ✓ Correo y contraseña generados
-                </span>
+                {createdResult.backendNotified ? (
+                  <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-[#e6f4ea] text-[#137333]">
+                    ✓ Enviado por Gmail
+                  </span>
+                ) : (
+                  <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-[#fef3c7] text-[#92400e]" title={createdResult.credentialsDelivery?.message || 'Revisa la configuración de Gmail en .env'}>
+                    ⚠️ Credenciales listas (Gmail pendiente en .env)
+                  </span>
+                )}
               </div>
 
               <div className="space-y-2.5 text-sm">

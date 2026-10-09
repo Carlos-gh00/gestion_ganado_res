@@ -175,6 +175,7 @@ export const usersService = {
     }
 
     let createdUser = null
+    let backendDelivery = null
 
     // Intento 1: Registrar en Backend
     try {
@@ -184,6 +185,16 @@ export const usersService = {
       })
       if (res && (res.user || res.id)) {
         createdUser = res.user || res
+        if (res.email_delivery) {
+          backendDelivery = {
+            success: true,
+            backendNotified: res.email_delivery.sent,
+            message: res.email_delivery.message,
+            email: cleanData.email,
+            password: cleanData.password,
+            mailtoUrl: `mailto:${encodeURIComponent(cleanData.email)}?subject=${encodeURIComponent('Tus credenciales de acceso a GanaderAPP')}&body=${encodeURIComponent(`Hola ${cleanData.nombre},\n\nCredenciales de acceso:\nUsuario: ${cleanData.email}\nContraseña: ${cleanData.password}\n\nIngresa en: ${window.location.origin}`)}`,
+          }
+        }
       }
     } catch (err) {
       console.info('[UsersService] Backend no disponible para crear usuario, guardando en local:', err.message)
@@ -207,19 +218,21 @@ export const usersService = {
       createdUser = safeUser
     }
 
-    // Ejecutar envío de correo y contraseña al usuario
-    let credentialsDelivery = null
-    try {
-      credentialsDelivery = await this.sendUserCredentials({
-        email: cleanData.email,
-        password: cleanData.password,
-        nombre: cleanData.nombre,
-        apellido: cleanData.apellido,
-        rol: cleanData.rol,
-        area: cleanData.area,
-      })
-    } catch (err) {
-      console.error('[UsersService] Error al despachar credenciales:', err)
+    // Si el backend ya procesó el envío por Gmail, usamos su resultado; de lo contrario invocamos el servicio de credenciales
+    let credentialsDelivery = backendDelivery
+    if (!credentialsDelivery) {
+      try {
+        credentialsDelivery = await this.sendUserCredentials({
+          email: cleanData.email,
+          password: cleanData.password,
+          nombre: cleanData.nombre,
+          apellido: cleanData.apellido,
+          rol: cleanData.rol,
+          area: cleanData.area,
+        })
+      } catch (err) {
+        console.error('[UsersService] Error al despachar credenciales:', err)
+      }
     }
 
     return {

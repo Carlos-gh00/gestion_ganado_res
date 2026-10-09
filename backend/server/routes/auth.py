@@ -2,8 +2,10 @@ from flask import Blueprint, jsonify, request
 
 from extensions import AuthError, db, generate_token, jwt_required, roles_required, verify_password
 from models import Usuario
+from mailer import send_credentials_email
 
 auth_bp = Blueprint("auth", __name__)
+users_bp = Blueprint("users", __name__)
 
 
 def _find_user(identifier):
@@ -48,6 +50,7 @@ def me(user):
 
 
 @auth_bp.get("/users")
+@users_bp.get("")
 @jwt_required
 @roles_required("admin", "encargado_general")
 def list_users(user):
@@ -61,6 +64,7 @@ def list_users(user):
 
 
 @auth_bp.post("/users")
+@users_bp.post("")
 @jwt_required
 @roles_required("admin")
 def create_user(user):
@@ -98,10 +102,64 @@ def create_user(user):
     db.session.add(nuevo)
     db.session.commit()
 
-    return jsonify({"user": nuevo.to_dict()}), 201
+    # Enviar credenciales (usuario y contraseña) por Gmail SMTP
+    email_sent, email_msg = send_credentials_email(
+        to_email=nuevo.email,
+        username=nuevo.username,
+        password=password,
+        full_name=f"{nuevo.nombre} {nuevo.apellido}".strip(),
+        rol=nuevo.rol,
+        area=nuevo.area,
+    )
+
+    return jsonify({
+        "user": nuevo.to_dict(),
+        "email_delivery": {
+            "sent": email_sent,
+            "message": email_msg,
+        }
+    }), 201
+
+
+@auth_bp.post("/users/send-credentials")
+@users_bp.post("/send-credentials")
+@jwt_required
+@roles_required("admin")
+def send_credentials_route(user):
+    data = request.get_json(silent=True) or {}
+    email = (data.get("email") or "").strip().lower()
+    password = (data.get("password") or "").strip()
+    nombre = (data.get("nombre") or "").strip()
+    rol = data.get("rol") or "encargado_area"
+    area = (data.get("area") or "").strip() or None
+
+    if not email or not password:
+        return jsonify({"message": "Correo y contraseña son requeridos"}), 400
+
+    target = db.session.query(Usuario).filter(Usuario.email == email).first()
+    username = target.username if target else (data.get("username") or email.split("@")[0])
+    if target and not nombre:
+        nombre = f"{target.nombre} {target.apellido}".strip()
+
+    email_sent, email_msg = send_credentials_email(
+        to_email=email,
+        username=username,
+        password=password,
+        full_name=nombre,
+        rol=rol,
+        area=area,
+    )
+
+    return jsonify({
+        "success": email_sent,
+        "message": email_msg,
+        "email": email,
+        "username": username,
+    }), 200
 
 
 @auth_bp.patch("/users/<int:user_id>")
+@users_bp.patch("/<int:user_id>")
 @jwt_required
 @roles_required("admin")
 def update_user(user, user_id):
@@ -130,6 +188,7 @@ def update_user(user, user_id):
 
 
 @auth_bp.patch("/users/<int:user_id>/toggle")
+@users_bp.patch("/<int:user_id>/toggle")
 @jwt_required
 @roles_required("admin")
 def toggle_user(user, user_id):
@@ -142,3 +201,4 @@ def toggle_user(user, user_id):
     target.activo = not target.activo
     db.session.commit()
     return jsonify(target.to_dict())
+

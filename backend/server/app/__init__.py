@@ -45,7 +45,7 @@ def create_app(config_object=Config):
     from models import register_models
     register_models()
 
-    from routes.auth import auth_bp
+    from routes.auth import auth_bp, users_bp
     from routes.acostaderos import acostaderos_bp
     from routes.animals import animals_bp
     from routes.inventory import inventory_bp
@@ -54,6 +54,7 @@ def create_app(config_object=Config):
     from routes.dashboard import dashboard_bp
 
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
+    app.register_blueprint(users_bp, url_prefix="/api/users")
     app.register_blueprint(acostaderos_bp, url_prefix="/api/acostaderos")
     app.register_blueprint(animals_bp, url_prefix="/api/animals")
     app.register_blueprint(inventory_bp, url_prefix="/api/inventory")
