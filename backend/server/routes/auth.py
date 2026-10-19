@@ -202,3 +202,19 @@ def toggle_user(user, user_id):
     db.session.commit()
     return jsonify(target.to_dict())
 
+
+@auth_bp.delete("/users/<int:user_id>")
+@users_bp.delete("/<int:user_id>")
+@jwt_required
+@roles_required("admin")
+def delete_user(user, user_id):
+    target = db.session.get(Usuario, user_id)
+    if not target:
+        return jsonify({"message": "Usuario no encontrado"}), 404
+    if target.id == user.id:
+        return jsonify({"message": "No puedes eliminar tu propia cuenta de administrador"}), 400
+
+    db.session.delete(target)
+    db.session.commit()
+    return jsonify({"success": True, "message": f"Usuario {target.username} eliminado correctamente"})
+

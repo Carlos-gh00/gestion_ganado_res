@@ -87,6 +87,16 @@ export function AuthProvider({ children }) {
     }
   }
 
+  async function deleteUser(id) {
+    setLoading(true)
+    try {
+      const updated = await usersService.deleteUser(id)
+      setUsers(updated)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -98,6 +108,7 @@ export function AuthProvider({ children }) {
         addUser,
         sendCredentials,
         toggleUser,
+        deleteUser,
         loadUsers,
         ROL_LABELS,
         ROL_COLORS,

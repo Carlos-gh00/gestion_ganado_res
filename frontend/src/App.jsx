@@ -12,6 +12,7 @@ import MobileBottomNav from './components/layout/MobileBottomNav'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import AnimalsPage from './pages/AnimalsPage'
+import GeneticaPage from './pages/GeneticaPage'
 import HealthPage from './pages/HealthPage'
 import InventoryPage from './pages/InventoryPage'
 import ReportsPage from './pages/ReportsPage'
@@ -30,6 +31,7 @@ function Shell() {
   const pages = {
     dashboard: <DashboardPage />,
     animals:   <AnimalsPage />,
+    genetica:  <GeneticaPage />,
     health:    <HealthPage />,
     inventory: <InventoryPage />,
     reports:   <ReportsPage />,

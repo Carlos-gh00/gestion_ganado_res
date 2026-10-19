@@ -1,35 +1,4 @@
-import { delay } from './api'
-
-const DASHBOARD_KPIS = [
-  { label: 'Total animales', value: '1,284', sub: 'En 6 acostaderos', icon: '🐄', color: '#2e4829' },
-  { label: 'Peso promedio', value: '418 kg', sub: 'Meta: 480 kg', icon: '⚖', color: '#b87333' },
-  { label: 'En tratamiento', value: '9', sub: '3 críticos', icon: '✚', color: '#b84040' },
-  { label: 'Ventas septiembre', value: '$4.2M', sub: '87 cabezas', icon: '◈', color: '#3a7d44' },
-]
-
-const ACOSTADEROS_RESUMEN = [
-  { nombre: 'Acostadero A', animales: 148, capacidad: 180, estado: 'Normal' },
-  { nombre: 'Acostadero B', animales: 162, capacidad: 160, estado: 'Lleno' },
-  { nombre: 'Acostadero C', animales: 95, capacidad: 150, estado: 'Normal' },
-  { nombre: 'Acostadero D', animales: 220, capacidad: 200, estado: 'Sobrecargado' },
-  { nombre: 'Acostadero E', animales: 110, capacidad: 150, estado: 'Normal' },
-  { nombre: 'Acostadero F', animales: 80, capacidad: 160, estado: 'Disponible' },
-]
-
-const ALERTAS_DATA = [
-  { tipo: 'danger',  msg: '3 animales con fiebre en Acostadero D',      tiempo: '2 h' },
-  { tipo: 'warning', msg: 'Alimento balanceado bajo stock — 4,200 kg',  tiempo: '5 h' },
-  { tipo: 'success', msg: '48 novillos listos para faena — Lote 04',    tiempo: 'Ayer' },
-  { tipo: 'warning', msg: 'Vacuna Aftosa vence en 8 días',              tiempo: 'Ayer' },
-]
-
-const MOVIMIENTOS_DATA = [
-  { id: 'A-2847', tipo: 'Ingreso',    desc: 'Ingreso por compra — 12 novillos Hereford',    hora: '08:30' },
-  { id: 'A-2901', tipo: 'Traslado',   desc: 'Traslado Acostadero B → C — 8 animales',       hora: '10:15' },
-  { id: 'A-2733', tipo: 'Salida',     desc: 'Salida a frigorífico — 6 novillos Brangus',    hora: '12:00' },
-  { id: 'A-3001', tipo: 'Tratamiento',desc: 'Inicio tratamiento fiebre — Acostadero D',     hora: '14:20' },
-  { id: 'A-2655', tipo: 'Ingreso',    desc: 'Ingreso terneros destete — 20 animales',       hora: 'Ayer' },
-]
+import { request } from './api'
 
 const WMO_CODE_MAP = {
   0: { label: 'Cielo despejado', icon: '☀️' },
@@ -55,67 +24,88 @@ const WMO_CODE_MAP = {
   99: { label: 'Tormenta severa', icon: '⛈️' },
 }
 
-const FALLBACK_CLIMA = {
-  ubicacion: 'Estancia Ganadera',
-  condicion: 'Parcialmente nublado',
-  temperatura: '24 °C',
-  maxMin: 'Máx: 28°C · Mín: 15°C',
-  icon: '🌤️',
-  googleUrl: 'https://www.google.com/search?q=clima+hoy',
-  actualizadoA: '08:00',
-  isLive: false,
-  items: [
-    { label: 'Temperatura', value: '24 °C', sub: 'Máx 28° / Mín 15°', icon: '🌤️' },
-    { label: 'Humedad', value: '62%', sub: 'Humedad relativa', icon: '💧' },
-    { label: 'Viento', value: '12 km/h', sub: 'Brisa de campo', icon: '💨' },
-    { label: 'Lluvia', value: 'Sin lluvia', sub: 'Probabilidad 10%', icon: '☀️' },
-  ],
-}
-
-const INVENTARIO_ALERTA = [
-  { nombre: 'Alimento balanceado', stock: 4200, unidad: 'kg', critico: true },
-  { nombre: 'Vacuna Aftosa', stock: 200, unidad: 'dosis', critico: true },
-  { nombre: 'Antibiótico OTC', stock: 48, unidad: 'L', critico: false },
+const DEFAULT_KPIS = [
+  { label: 'Total animales', value: '0', sub: 'En 0 acostaderos', icon: '🐄', color: '#2e4829' },
+  { label: 'Peso promedio', value: '0 kg', sub: 'Meta: 480 kg', icon: '⚖', color: '#b87333' },
+  { label: 'En tratamiento', value: '0', sub: '0 críticos', icon: '✚', color: '#b84040' },
+  { label: 'Ventas del mes', value: '$0', sub: '0 cabezas', icon: '◈', color: '#3a7d44' },
 ]
 
 export const dashboardService = {
+  /**
+   * Obtiene los KPIs generales calculados en tiempo real desde la BD.
+   */
   async getKPIs() {
-    await delay(50)
-    return [...DASHBOARD_KPIS]
-  },
-
-  async getAcostaderosResumen() {
-    await delay(60)
-    return [...ACOSTADEROS_RESUMEN]
-  },
-
-  async getAlertas() {
-    await delay(50)
-    return [...ALERTAS_DATA]
-  },
-
-  async getMovimientos() {
-    await delay(60)
-    return [...MOVIMIENTOS_DATA]
-  },
-
-  async getInventarioCritico() {
-    await delay(50)
-    return [...INVENTARIO_ALERTA]
+    try {
+      const res = await request('/dashboard/kpis')
+      return Array.isArray(res) && res.length > 0 ? res : DEFAULT_KPIS
+    } catch (err) {
+      console.warn('[dashboardService] Error al obtener KPIs de BD:', err.message)
+      return DEFAULT_KPIS
+    }
   },
 
   /**
-   * Obtiene los datos del día (condiciones climáticas, temperatura, viento, humedad, precipitación)
-   * consultando la meteorología en tiempo real y conectando con Google Clima.
+   * Obtiene el resumen de acostaderos desde la base de datos real.
+   */
+  async getAcostaderosResumen() {
+    try {
+      const res = await request('/acostaderos')
+      return Array.isArray(res) ? res : []
+    } catch (err) {
+      console.warn('[dashboardService] Error al obtener acostaderos de BD:', err.message)
+      return []
+    }
+  },
+
+  /**
+   * Obtiene las alertas del rancho desde la base de datos real.
+   */
+  async getAlertas() {
+    try {
+      const res = await request('/dashboard/alertas')
+      return Array.isArray(res) ? res : []
+    } catch (err) {
+      console.warn('[dashboardService] Error al obtener alertas de BD:', err.message)
+      return []
+    }
+  },
+
+  /**
+   * Obtiene los movimientos recientes de ganado desde la base de datos real.
+   */
+  async getMovimientos() {
+    try {
+      const res = await request('/dashboard/actividad')
+      return Array.isArray(res) ? res : []
+    } catch (err) {
+      console.warn('[dashboardService] Error al obtener movimientos de BD:', err.message)
+      return []
+    }
+  },
+
+  /**
+   * Obtiene los artículos en estado crítico desde la base de datos real.
+   */
+  async getInventarioCritico() {
+    try {
+      const res = await request('/inventory/items?critico=true')
+      return Array.isArray(res) ? res : []
+    } catch (err) {
+      console.warn('[dashboardService] Error al obtener inventario crítico de BD:', err.message)
+      return []
+    }
+  },
+
+  /**
+   * Consulta el clima satelital en tiempo real para el rancho.
    */
   async getClima() {
     try {
-      // Coordenadas base (Jalisco / Región ganadera)
       let lat = 20.65
       let lon = -103.35
       let ubicacion = 'Región Ganadera'
 
-      // Detectar geolocalización del navegador si está permitida (con timeout de 1.8s)
       if (typeof navigator !== 'undefined' && navigator.geolocation) {
         try {
           const pos = await new Promise((resolve, reject) => {
@@ -127,11 +117,10 @@ export const dashboardService = {
             ubicacion = 'Tu ubicación'
           }
         } catch {
-          // Si no se concede o expira, continuamos con coordenadas default
+          // Continuar con coordenadas base
         }
       }
 
-      // Consulta de la API meteorológica pública y en tiempo real
       const res = await fetch(
         `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,precipitation&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto`
       )
@@ -148,59 +137,57 @@ export const dashboardService = {
       const humidity = Math.round(cur.relative_humidity_2m ?? 60)
       const wind = Math.round(cur.wind_speed_10m ?? 10)
       const precipitation = cur.precipitation ?? 0
-      const probLluvia = daily.precipitation_probability_max?.[0] ?? 0
+      const rainProb = Math.round(daily.precipitation_probability_max?.[0] ?? 0)
 
-      const wInfo = WMO_CODE_MAP[cur.weather_code] || { label: 'Condición estable', icon: '🌤️' }
-      const rainLabel = precipitation > 0 ? `${precipitation} mm` : 'Sin lluvia'
-
-      const now = new Date()
-      const timeStr = now.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })
-
-      const tzParts = (data.timezone || '').split('/')
-      const cityName = tzParts[tzParts.length - 1]?.replace(/_/g, ' ') || ubicacion
-
-      const googleUrl = `https://www.google.com/search?q=clima+${encodeURIComponent(cityName || 'hoy')}`
+      const weatherCode = cur.weather_code ?? 1
+      const weatherInfo = WMO_CODE_MAP[weatherCode] || { label: 'Despejado', icon: '☀️' }
 
       return {
-        ubicacion: cityName,
-        condicion: wInfo.label,
+        ubicacion,
+        condicion: weatherInfo.label,
+        icono: weatherInfo.icon,
+        icon: weatherInfo.icon,
+        tempActual: temp,
         temperatura: `${temp} °C`,
+        tempMax: maxT,
+        tempMin: minT,
         maxMin: `Máx: ${maxT}°C · Mín: ${minT}°C`,
-        icon: wInfo.icon,
-        googleUrl,
-        actualizadoA: timeStr,
+        googleUrl: `https://www.google.com/search?q=clima+${encodeURIComponent(ubicacion)}`,
+        actualizadoA: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         isLive: true,
         items: [
-          {
-            label: 'Temperatura',
-            value: `${temp} °C`,
-            sub: `Máx ${maxT}° / Mín ${minT}°`,
-            icon: wInfo.icon,
-          },
-          {
-            label: 'Humedad',
-            value: `${humidity}%`,
-            sub: humidity > 70 ? 'Humedad alta' : 'Nivel óptimo',
-            icon: '💧',
-          },
-          {
-            label: 'Viento',
-            value: `${wind} km/h`,
-            sub: wind > 25 ? 'Ráfagas fuertes' : 'Viento moderado',
-            icon: '💨',
-          },
+          { label: 'Temperatura', value: `${temp} °C`, sub: `Máx ${maxT}° / Mín ${minT}°`, icon: weatherInfo.icon },
+          { label: 'Humedad', value: `${humidity}%`, sub: 'Humedad relativa', icon: '💧' },
+          { label: 'Viento', value: `${wind} km/h`, sub: 'Brisa de campo', icon: '💨' },
           {
             label: 'Lluvia',
-            value: rainLabel,
-            sub: `Probabilidad: ${probLluvia}%`,
+            value: precipitation > 0 ? `${precipitation} mm` : 'Sin lluvia',
+            sub: `Probabilidad ${rainProb}%`,
             icon: precipitation > 0 ? '🌧️' : '☀️',
           },
         ],
       }
-    } catch (err) {
-      console.warn('[ClimaService] No se pudo obtener clima en tiempo real, usando fallback:', err.message)
-      return { ...FALLBACK_CLIMA }
+    } catch {
+      return {
+        ubicacion: 'Estancia Ganadera',
+        condicion: 'Despejado',
+        icono: '☀️',
+        icon: '☀️',
+        tempActual: 24,
+        temperatura: '24 °C',
+        tempMax: 28,
+        tempMin: 15,
+        maxMin: 'Máx: 28°C · Mín: 15°C',
+        googleUrl: 'https://www.google.com/search?q=clima+rancho',
+        actualizadoA: '08:00',
+        isLive: false,
+        items: [
+          { label: 'Temperatura', value: '24 °C', sub: 'Máx 28° / Mín 15°', icon: '🌤️' },
+          { label: 'Humedad', value: '60%', sub: 'Humedad relativa', icon: '💧' },
+          { label: 'Viento', value: '10 km/h', sub: 'Brisa de campo', icon: '💨' },
+          { label: 'Lluvia', value: 'Sin lluvia', sub: 'Probabilidad 0%', icon: '☀️' },
+        ],
+      }
     }
   },
 }
-

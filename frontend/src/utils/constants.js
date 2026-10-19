@@ -13,10 +13,10 @@ export const ROL_COLORS = {
 }
 
 export const ROL_PERMISOS = {
-  admin: ['Panel general', 'Animales', 'Inventario', 'Sanidad', 'Reportes', 'Admin', 'Alta de usuarios'],
-  encargado_general: ['Panel general', 'Animales', 'Inventario', 'Sanidad', 'Reportes'],
-  encargado_rancho: ['Panel general', 'Animales', 'Inventario', 'Sanidad'],
-  encargado_area: ['Panel general', 'Animales (solo su área)'],
+  admin: ['Panel general', 'Animales', 'Genética', 'Inventario', 'Sanidad', 'Reportes', 'Admin', 'Alta de usuarios'],
+  encargado_general: ['Panel general', 'Animales', 'Genética', 'Inventario', 'Sanidad', 'Reportes'],
+  encargado_rancho: ['Panel general', 'Animales', 'Genética', 'Inventario', 'Sanidad'],
+  encargado_area: ['Panel general', 'Animales (solo su área)', 'Genética'],
 }
 
 export const ROLES_LIST = [
@@ -29,6 +29,7 @@ export const ROLES_LIST = [
 export const NAV_ITEMS = [
   { id: 'dashboard',  label: 'Panel General',  mobileLabel: 'Panel',      icon: '▣',  roles: ['admin', 'encargado_general', 'encargado_rancho', 'encargado_area'] },
   { id: 'animals',    label: 'Animales',        mobileLabel: 'Animales',   icon: '🐄',  roles: ['admin', 'encargado_general', 'encargado_rancho', 'encargado_area'] },
+  { id: 'genetica',   label: 'Genética',        mobileLabel: 'Genética',   icon: '🧬',  roles: ['admin', 'encargado_general', 'encargado_rancho', 'encargado_area'] },
   { id: 'inventory',  label: 'Inventario',      mobileLabel: 'Inventario', icon: '⊟',  roles: ['admin', 'encargado_general', 'encargado_rancho'] },
   { id: 'health',     label: 'Sanidad',         mobileLabel: 'Sanidad',    icon: '✚',  roles: ['admin', 'encargado_general', 'encargado_rancho'] },
   { id: 'reports',    label: 'Reportes',        mobileLabel: 'Reportes',   icon: '◈',  roles: ['admin', 'encargado_general'] },

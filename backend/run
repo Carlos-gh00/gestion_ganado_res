@@ -1,0 +1,7 @@
+import os
+import sys
+
+# Ejecuta run.py
+run_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "run.py")
+with open(run_file, "r", encoding="utf-8") as f:
+    exec(f.read(), globals())

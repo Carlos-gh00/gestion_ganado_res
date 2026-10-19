@@ -4,13 +4,38 @@ import { ROL_LABELS, ROL_COLORS, ROL_PERMISOS, ROLES_LIST } from '../utils/const
 import Modal from '../components/ui/Modal'
 
 export default function AdminPage() {
-  const { users, addUser, toggleUser, sendCredentials } = useAuth()
+  const { user, users, addUser, toggleUser, deleteUser, sendCredentials } = useAuth()
   const [showModal, setShowModal] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [createdResult, setCreatedResult] = useState(null)
   const [showPassword, setShowPassword] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
   const [sendByEmail, setSendByEmail] = useState(true)
+  const [deletingId, setDeletingId] = useState(null)
+
+  const isAdmin = user?.rol === 'admin'
+
+  async function handleDeleteUser(targetUser) {
+    if (!isAdmin) return
+    if (targetUser.id === user?.id) {
+      alert('No puedes eliminar tu propia cuenta de administrador.')
+      return
+    }
+    const confirmed = window.confirm(
+      `¿Estás seguro de que deseas eliminar permanentemente al usuario ${targetUser.nombre} ${targetUser.apellido} (${targetUser.email})?\n\nEsta acción no se puede deshacer.`
+    )
+    if (!confirmed) return
+
+    setDeletingId(targetUser.id)
+    try {
+      await deleteUser(targetUser.id)
+    } catch (err) {
+      alert(err.message || 'Error al eliminar el usuario')
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   const [form, setForm] = useState({
     nombre: '',
@@ -46,10 +71,12 @@ export default function AdminPage() {
         area: form.area,
         credentialsDelivery: res?.credentialsDelivery || null,
         backendNotified: res?.credentialsDelivery?.backendNotified,
+        gmailWebUrl: res?.credentialsDelivery?.gmailWebUrl,
         mailtoUrl: res?.credentialsDelivery?.mailtoUrl,
       })
     } catch (err) {
       console.error('Error al dar de alta:', err)
+      setErrorMessage(err.message || 'Error al registrar el usuario')
     } finally {
       setSubmitting(false)
     }
@@ -58,6 +85,7 @@ export default function AdminPage() {
   function handleCloseModal() {
     setShowModal(false)
     setCreatedResult(null)
+    setErrorMessage('')
     setCopied(false)
     setShowPassword(false)
     setForm({ nombre: '', apellido: '', email: '', password: '', rol: 'encargado_area', area: '' })
@@ -197,14 +225,28 @@ export default function AdminPage() {
                       </span>
                     </td>
                     <td className="px-5 py-3">
-                      <button
-                        type="button"
-                        onClick={() => toggleUser(u.id)}
-                        className="text-xs font-semibold transition-opacity hover:opacity-70 cursor-pointer"
-                        style={{ color: u.activo ? '#b84040' : '#3a7d44' }}
-                      >
-                        {u.activo ? 'Desactivar' : 'Activar'}
-                      </button>
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => toggleUser(u.id)}
+                          className="text-xs font-semibold transition-opacity hover:opacity-70 cursor-pointer"
+                          style={{ color: u.activo ? '#d97706' : '#3a7d44' }}
+                        >
+                          {u.activo ? 'Desactivar' : 'Activar'}
+                        </button>
+
+                        {isAdmin && u.id !== user?.id && (
+                          <button
+                            type="button"
+                            disabled={deletingId === u.id}
+                            onClick={() => handleDeleteUser(u)}
+                            className="text-xs font-semibold text-red-600 hover:text-red-800 transition-opacity hover:opacity-70 cursor-pointer disabled:opacity-40"
+                            title="Eliminar usuario permanentemente"
+                          >
+                            {deletingId === u.id ? 'Eliminando…' : '🗑️ Eliminar'}
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 )
@@ -288,15 +330,26 @@ export default function AdminPage() {
                 {copied ? '✓ ¡Credenciales copiadas al portapapeles!' : '📋 Copiar mensaje con correo y contraseña'}
               </button>
 
+              {createdResult.gmailWebUrl && (
+                <a
+                  href={createdResult.gmailWebUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full py-2.5 rounded-xl border text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer transition-colors bg-white hover:bg-[#faf6ef] text-[#ea4335]"
+                  style={{ borderColor: '#ea4335' }}
+                >
+                  ✉️ Abrir y enviar en Gmail Web
+                </a>
+              )}
+
               {createdResult.mailtoUrl && (
                 <a
                   href={createdResult.mailtoUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="w-full py-2.5 rounded-xl border text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer transition-colors bg-white hover:bg-[#faf6ef] text-[#2e4829]"
-                  style={{ borderColor: '#2e4829' }}
+                  className="w-full py-2 rounded-xl text-xs flex items-center justify-center gap-1 cursor-pointer transition-colors text-[#7a7065] hover:text-[#1c2110]"
                 >
-                  ✉️ Abrir en cliente de correo (enviar por email)
+                  O abrir en Outlook / App de Correo del sistema
                 </a>
               )}
 
@@ -312,6 +365,11 @@ export default function AdminPage() {
           </div>
         ) : (
           <form onSubmit={handleAdd} className="space-y-4">
+            {errorMessage && (
+              <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 font-medium">
+                ⚠️ {errorMessage}
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: '#9a8f82' }}>
