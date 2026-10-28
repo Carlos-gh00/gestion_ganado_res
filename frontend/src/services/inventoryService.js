@@ -103,4 +103,31 @@ export const inventoryService = {
       throw err
     }
   },
+
+  /**
+   * Registra una entrada rápida para un ítem específico.
+   */
+  async registrarEntrada(catKey, itemId, cantidad) {
+    return this.registrarMovimiento({
+      itemId,
+      tipo: 'Entrada',
+      cantidad: Number(cantidad) || 0,
+      nota: `Entrada registrada en sección ${catKey}`,
+    })
+  },
+
+  /**
+   * Elimina un ítem del inventario (solo admin).
+   */
+  async deleteItem(id) {
+    try {
+      const res = await request(`/inventory/items/${id}`, {
+        method: 'DELETE',
+      })
+      return res
+    } catch (err) {
+      console.error('[inventoryService] Error al eliminar artículo:', err.message)
+      throw err
+    }
+  },
 }

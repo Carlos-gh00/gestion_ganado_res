@@ -33,11 +33,24 @@ def crear(user):
     if db.session.get(Acostadero, id_):
         return jsonify({"message": f"El acostadero {id_} ya existe"}), 409
 
+    tipo = (data.get("tipo") or "Acostadero").strip()
+    if tipo not in ("Acostadero", "Corral", "Rancho"):
+        tipo = "Acostadero"
+
+    usuario_id = data.get("usuario_id")
+    if usuario_id:
+        try:
+            usuario_id = int(usuario_id)
+        except (ValueError, TypeError):
+            usuario_id = None
+
     ac = Acostadero(
         id=id_,
         nombre=nombre,
         capacidad=int(data.get("capacidad") or 0),
         estado=data.get("estado") or "Normal",
+        tipo=tipo,
+        usuario_id=usuario_id,
     )
     db.session.add(ac)
     db.session.commit()
@@ -59,6 +72,14 @@ def actualizar(user, acostadero_id):
         ac.capacidad = int(data["capacidad"] or 0)
     if "estado" in data and data["estado"]:
         ac.estado = data["estado"]
+    if "tipo" in data and data["tipo"]:
+        ac.tipo = data["tipo"]
+    if "usuario_id" in data:
+        uid = data["usuario_id"]
+        try:
+            ac.usuario_id = int(uid) if uid else None
+        except (ValueError, TypeError):
+            ac.usuario_id = None
 
     db.session.commit()
     return jsonify(ac.to_dict())
@@ -66,7 +87,7 @@ def actualizar(user, acostadero_id):
 
 @acostaderos_bp.delete("/<acostadero_id>")
 @jwt_required
-@roles_required("admin")
+@roles_required("admin", "encargado_general", "encargado_rancho")
 def eliminar(user, acostadero_id):
     ac = db.session.get(Acostadero, acostadero_id)
     if not ac:

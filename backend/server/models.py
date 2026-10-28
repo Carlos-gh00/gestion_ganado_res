@@ -50,22 +50,31 @@ class Usuario(db.Model):
 class Acostadero(db.Model):
     __tablename__ = "acostaderos"
 
-    id = db.Column(db.String(4), primary_key=True)
+    id = db.Column(db.String(10), primary_key=True)
     nombre = db.Column(db.String(80), nullable=False)
     capacidad = db.Column(db.Integer, nullable=False, default=0)
     estado = db.Column(db.String(30), nullable=False, default="Normal")
+    tipo = db.Column(db.String(30), nullable=False, default="Acostadero")  # Acostadero, Corral, Rancho
+    usuario_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)
 
+    encargado = db.relationship("Usuario", foreign_keys=[usuario_id], lazy="joined")
     animales = db.relationship(
         "Animal", back_populates="acostadero", cascade="all, delete-orphan", lazy="selectin"
     )
 
     def to_dict(self, include_animales=False):
         total = self.total_calculado()
+        encargado_nombre = None
+        if self.encargado:
+            encargado_nombre = f"{self.encargado.nombre} {self.encargado.apellido}".strip()
         data = {
             "id": self.id,
             "nombre": self.nombre,
             "capacidad": self.capacidad,
             "estado": self.estado,
+            "tipo": self.tipo or "Acostadero",
+            "usuario_id": self.usuario_id,
+            "encargado": encargado_nombre,
             "total": total,
             "estadoCalculado": self.estado_calculado(total),
         }
@@ -102,7 +111,7 @@ class Animal(db.Model):
     origen = db.Column(db.String(120))
     fecha_ingreso = db.Column(db.Date)
     fecha_salida = db.Column(db.Date)
-    acostadero_id = db.Column(db.String(4), db.ForeignKey("acostaderos.id"), index=True)
+    acostadero_id = db.Column(db.String(10), db.ForeignKey("acostaderos.id"), index=True)
 
     acostadero = db.relationship("Acostadero", back_populates="animales")
     tratamientos = db.relationship("Tratamiento", back_populates="animal", cascade="all, delete-orphan")
@@ -118,6 +127,7 @@ class Animal(db.Model):
             "fecha": _iso(self.fecha_ingreso),
             "acostadero": self.acostadero_id,
             "acostaderoNombre": self.acostadero.nombre if self.acostadero else None,
+            "acostaderoTipo": self.acostadero.tipo if self.acostadero else "Acostadero",
             "acostaderoId": self.acostadero_id,
         }
 
@@ -134,6 +144,7 @@ class ItemInventario(db.Model):
     proveedor = db.Column(db.String(120))
     costo = db.Column(db.Float, default=0)
     ultima_entrada = db.Column(db.Date)
+    especificaciones = db.Column(db.Text)
 
     def estado(self):
         if self.minimo <= 0:
@@ -156,6 +167,7 @@ class ItemInventario(db.Model):
             "proveedor": self.proveedor,
             "costo": self.costo,
             "ultimo": _iso(self.ultima_entrada),
+            "especificaciones": self.especificaciones or "",
             "estado": self.estado(),
         }
 

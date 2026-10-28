@@ -62,4 +62,66 @@ export const animalsService = {
       throw err
     }
   },
+
+  /**
+   * Elimina un animal de la base de datos.
+   */
+  async deleteAnimal(id) {
+    try {
+      const res = await request(`/animals/${id}`, {
+        method: 'DELETE',
+      })
+      return res
+    } catch (err) {
+      console.error('[animalsService] Error al eliminar animal:', err.message)
+      throw err
+    }
+  },
+
+  /**
+   * Crea un nuevo acostadero, corral o rancho.
+   */
+  async createAcostadero(data) {
+    try {
+      const res = await request('/acostaderos', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      })
+      return res
+    } catch (err) {
+      console.error('[animalsService] Error al crear acostadero/corral/rancho:', err.message)
+      throw err
+    }
+  },
+
+  /**
+   * Actualiza un acostadero, corral o rancho.
+   */
+  async updateAcostadero(id, data) {
+    try {
+      const res = await request(`/acostaderos/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      })
+      return res
+    } catch (err) {
+      console.error('[animalsService] Error al actualizar acostadero/corral/rancho:', err.message)
+      throw err
+    }
+  },
+
+  /**
+   * Elimina un acostadero, corral o rancho si no tiene animales.
+   */
+  async deleteAcostadero(id) {
+    try {
+      const res = await request(`/acostaderos/${id}`, {
+        method: 'DELETE',
+      })
+      return res
+    } catch (err) {
+      console.error('[animalsService] Error al eliminar acostadero/corral/rancho:', err.message)
+      throw err
+    }
+  },
 }

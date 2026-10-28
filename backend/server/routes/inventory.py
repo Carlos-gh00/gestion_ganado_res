@@ -77,6 +77,7 @@ def crear(user):
         minimo=float(data.get("minimo") or 0),
         proveedor=(data.get("proveedor") or "").strip() or None,
         costo=float(data.get("costo") or 0),
+        especificaciones=(data.get("especificaciones") or "").strip() or None,
     )
     db.session.add(item)
     db.session.add(
@@ -101,9 +102,9 @@ def actualizar(user, item_id):
         return jsonify({"message": "Articulo no encontrado"}), 404
 
     data = request.get_json(silent=True) or {}
-    for campo in ("nombre", "proveedor", "unidad"):
-        if campo in data and data[campo]:
-            setattr(item, campo, str(data[campo]).strip())
+    for campo in ("nombre", "proveedor", "unidad", "especificaciones"):
+        if campo in data:
+            setattr(item, campo, str(data[campo]).strip() if data[campo] is not None else None)
     if "minimo" in data:
         item.minimo = float(data["minimo"] or 0)
     if "costo" in data:
@@ -177,7 +178,7 @@ def movimientos(user, item_id):
 
 @inventory_bp.delete("/items/<item_id>")
 @jwt_required
-@roles_required("admin")
+@roles_required("admin", "encargado_general", "encargado_rancho")
 def eliminar(user, item_id):
     item = db.session.get(ItemInventario, item_id)
     if not item:
